@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import '../../../../features/income_expense/data/models/income_model.dart';
 import '../../../../features/income_expense/data/models/expense_model.dart';
 import '../../../../features/assets/data/models/asset_model.dart';
@@ -35,7 +36,7 @@ class CashFlowCalculator {
   }) {
     final currentYear = DateTime.now().year;
     final startAge = profile.currentAge;
-    final maxAge = 80;
+    const maxAge = 80;
     final totalYears = maxAge - startAge;
     final results = <YearData>[];
     double runningAssets = assets.fold(0, (sum, a) => sum + a.currentValue);
@@ -45,6 +46,12 @@ class CashFlowCalculator {
       final age = startAge + i;
       final isRetired = age >= profile.retirementAge;
 
+      // 是否处于失业状态（从指定年份开始）
+      bool isUnemployed = simulateUnemployment;
+      if (profile.unemploymentStartYear != null && year < profile.unemploymentStartYear!) {
+        isUnemployed = false;
+      }
+
       // 计算当年收入（考虑起始/结束月份）
       double activeIncome = 0;
       double passiveIncome = 0;
@@ -52,12 +59,34 @@ class CashFlowCalculator {
       for (final income in incomes) {
         if (!income.isActiveInYear(year)) continue;
         if (income.type == IncomeType.active) {
-          if (!simulateUnemployment || isRetired) {
+          if (!isUnemployed || isRetired) {
             activeIncome += income.annualIncomeInYear(year);
           }
         } else {
           passiveIncome += income.annualIncomeInYear(year);
         }
+      }
+
+      // 失业金收入（有领取月数限制）
+      double unemploymentBenefitIncome = 0;
+      if (isUnemployed && profile.unemploymentBenefit > 0 && profile.unemploymentBenefitMonths > 0) {
+        final startYear = profile.unemploymentStartYear ?? currentYear;
+        if (year >= startYear) {
+          final yearsSinceUnemployed = year - startYear;
+          final remainingMonths = profile.unemploymentBenefitMonths - yearsSinceUnemployed * 12;
+          if (remainingMonths > 0) {
+            final monthsThisYear = remainingMonths < 12 ? remainingMonths : 12;
+            unemploymentBenefitIncome = profile.unemploymentBenefit * monthsThisYear;
+          }
+        }
+      }
+
+      // 养老金收入（退休后，每年按 5% 增长）
+      double pensionIncome = 0;
+      if (isRetired && profile.pensionAmount > 0) {
+        final yearsSinceRetirement = age - profile.retirementAge;
+        pensionIncome = profile.pensionAmount * 12 *
+            math.pow(1.05, yearsSinceRetirement.toDouble()).toDouble();
       }
 
       // 计算当年支出（考虑起始/结束月份）
@@ -68,13 +97,39 @@ class CashFlowCalculator {
         }
       }
 
-      // 计算资产增值
-      double assetReturn = 0;
-      for (final asset in assets) {
-        assetReturn += runningAssets * asset.annualReturnRate;
+      // 通胀调整（每年复利）
+      if (profile.annualInflationRate > 0 && i > 0) {
+        totalExpense *= math.pow(1 + profile.annualInflationRate, i).toDouble();
       }
 
-      final totalIncome = activeIncome + passiveIncome + assetReturn;
+      // 失业额外支出（保险/医保等）
+      double extraExpense = 0;
+      if (isUnemployed && profile.unemploymentExtraExpense > 0 && profile.unemploymentExtraExpenseMonths > 0) {
+        final startYear = profile.unemploymentStartYear ?? currentYear;
+        if (year >= startYear) {
+          final yearsSinceUnemployed = year - startYear;
+          final remainingMonths = profile.unemploymentExtraExpenseMonths - yearsSinceUnemployed * 12;
+          if (remainingMonths > 0) {
+            final monthsThisYear = remainingMonths < 12 ? remainingMonths : 12;
+            extraExpense = profile.unemploymentExtraExpense * monthsThisYear;
+          }
+        }
+      }
+      totalExpense += extraExpense;
+
+      // 计算资产增值（加权平均收益率）
+      double assetReturn = 0;
+      if (assets.isNotEmpty && runningAssets > 0) {
+        final totalValue = assets.fold<double>(0, (s, a) => s + a.currentValue);
+        final blendedRate = totalValue > 0
+            ? assets.fold<double>(
+                    0, (s, a) => s + a.currentValue * a.annualReturnRate) /
+                totalValue
+            : 0.0;
+        assetReturn = runningAssets * blendedRate;
+      }
+
+      final totalIncome = activeIncome + passiveIncome + unemploymentBenefitIncome + pensionIncome + assetReturn;
       final netCashFlow = totalIncome - totalExpense;
       runningAssets += netCashFlow;
 

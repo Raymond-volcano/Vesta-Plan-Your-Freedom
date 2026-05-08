@@ -18,12 +18,36 @@ class UserProfileModel extends HiveObject {
   double targetMonthlyPassiveIncome; // 保留字段，但不再在UI中显示
   @HiveField(3)
   int genderIndex; // 0=male, 1=female
+  @HiveField(5)
+  double unemploymentBenefit; // 每月失业金
+  @HiveField(6)
+  int unemploymentBenefitMonths; // 失业金领取月数
+  @HiveField(7)
+  double pensionAmount; // 每月养老金
+  @HiveField(8)
+  int? unemploymentStartYear; // 失业开始年份（null=不模拟）
+  @HiveField(9)
+  int? unemploymentStartMonth; // 失业开始月份
+  @HiveField(10)
+  double annualInflationRate; // 年通胀率（如0.03=3%）
+  @HiveField(11)
+  double unemploymentExtraExpense; // 失业期间每月额外支出（保险/医保）
+  @HiveField(12)
+  int unemploymentExtraExpenseMonths; // 额外支出持续月数
 
   UserProfileModel({
     required this.currentAge,
     required this.retirementAge,
     this.targetMonthlyPassiveIncome = 0,
     this.genderIndex = 0,
+    this.unemploymentBenefit = 0,
+    this.unemploymentBenefitMonths = 0,
+    this.pensionAmount = 0,
+    this.unemploymentStartYear,
+    this.unemploymentStartMonth,
+    this.annualInflationRate = 0.03,
+    this.unemploymentExtraExpense = 0,
+    this.unemploymentExtraExpenseMonths = 0,
   });
 
   Gender get gender => Gender.values[genderIndex];
@@ -56,6 +80,15 @@ class UserProfileModel extends HiveObject {
     int? retirementAge,
     double? targetMonthlyPassiveIncome,
     int? genderIndex,
+    double? unemploymentBenefit,
+    int? unemploymentBenefitMonths,
+    double? pensionAmount,
+    int? unemploymentStartYear,
+    int? unemploymentStartMonth,
+    double? annualInflationRate,
+    double? unemploymentExtraExpense,
+    int? unemploymentExtraExpenseMonths,
+    bool clearUnemploymentStart = false,
   }) {
     return UserProfileModel(
       currentAge: currentAge ?? this.currentAge,
@@ -63,6 +96,21 @@ class UserProfileModel extends HiveObject {
       targetMonthlyPassiveIncome:
           targetMonthlyPassiveIncome ?? this.targetMonthlyPassiveIncome,
       genderIndex: genderIndex ?? this.genderIndex,
+      unemploymentBenefit: unemploymentBenefit ?? this.unemploymentBenefit,
+      unemploymentBenefitMonths:
+          unemploymentBenefitMonths ?? this.unemploymentBenefitMonths,
+      pensionAmount: pensionAmount ?? this.pensionAmount,
+      unemploymentStartYear: clearUnemploymentStart
+          ? null
+          : (unemploymentStartYear ?? this.unemploymentStartYear),
+      unemploymentStartMonth: clearUnemploymentStart
+          ? null
+          : (unemploymentStartMonth ?? this.unemploymentStartMonth),
+      annualInflationRate: annualInflationRate ?? this.annualInflationRate,
+      unemploymentExtraExpense:
+          unemploymentExtraExpense ?? this.unemploymentExtraExpense,
+      unemploymentExtraExpenseMonths:
+          unemploymentExtraExpenseMonths ?? this.unemploymentExtraExpenseMonths,
     );
   }
 }
@@ -79,6 +127,14 @@ class UserProfileModelAdapter extends TypeAdapter<UserProfileModel> {
       retirementAge: fields[1] as int,
       targetMonthlyPassiveIncome: (fields[2] as num?)?.toDouble() ?? 0,
       genderIndex: fields[3] as int? ?? 0,
+      unemploymentBenefit: (fields[5] as num?)?.toDouble() ?? 0,
+      unemploymentBenefitMonths: fields[6] as int? ?? 0,
+      pensionAmount: (fields[7] as num?)?.toDouble() ?? 0,
+      unemploymentStartYear: fields[8] as int?,
+      unemploymentStartMonth: fields[9] as int?,
+      annualInflationRate: (fields[10] as num?)?.toDouble() ?? 0.03,
+      unemploymentExtraExpense: (fields[11] as num?)?.toDouble() ?? 0,
+      unemploymentExtraExpenseMonths: fields[12] as int? ?? 0,
     );
   }
 
@@ -89,6 +145,14 @@ class UserProfileModelAdapter extends TypeAdapter<UserProfileModel> {
       1: obj.retirementAge,
       2: obj.targetMonthlyPassiveIncome,
       3: obj.genderIndex,
+      5: obj.unemploymentBenefit,
+      6: obj.unemploymentBenefitMonths,
+      7: obj.pensionAmount,
+      8: obj.unemploymentStartYear,
+      9: obj.unemploymentStartMonth,
+      10: obj.annualInflationRate,
+      11: obj.unemploymentExtraExpense,
+      12: obj.unemploymentExtraExpenseMonths,
     });
   }
 }

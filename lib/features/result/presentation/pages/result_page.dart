@@ -4,6 +4,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../features/assets/providers/asset_provider.dart';
+import '../../../../features/assets/data/models/asset_model.dart';
 import '../../domain/services/cash_flow_calculator.dart';
 import '../../providers/result_provider.dart';
 
@@ -14,6 +16,8 @@ class ResultPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final results = ref.watch(simulationResultProvider);
     final simulateUnemployment = ref.watch(simulateUnemploymentProvider);
+    final assets = ref.watch(assetListProvider);
+    final sensitivity = ref.watch(sensitivityProvider);
     final f = NumberFormat('#,###');
 
     return Scaffold(
@@ -75,6 +79,39 @@ class ResultPage extends ConsumerWidget {
                   child: _AssetChart(results: results),
                 ),
                 const Gap(24),
+                // ── 被动收入 vs 总支出 ──────────────────────
+                const Text(
+                  '被动收入 vs 总支出',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _PassiveVsExpenseChart(results: results),
+                const Gap(24),
+                // ── 资产构成 ──────────────────────────────────
+                const Text(
+                  '资产构成',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _AssetPieChart(assets: assets),
+                const Gap(24),
+                // ── 制约因素分析 ──────────────────────────────
+                const Text(
+                  '制约因素分析',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _SensitivityChart(items: sensitivity),
+                const Gap(24),
                 // ── 详细数据表格 ────────────────────────────
                 const Text(
                   '逐年数据',
@@ -92,12 +129,20 @@ class ResultPage extends ConsumerWidget {
 
   Widget _buildSummaryCards(List<YearData> results, NumberFormat f) {
     final lastYear = results.last;
-    final firstPositiveIndex = results.indexWhere((r) => r.totalAssets >= 0);
-    final freedomYear = firstPositiveIndex >= 0
-        ? results[firstPositiveIndex].year
-        : null;
+    const maxAge = 80;
+    final achievedFreedom = lastYear.age >= maxAge;
 
-    // 找到被动收入超过支出的年份
+    // 资产耗尽年份（如果模拟提前终止）
+    int? depletionIndex;
+    for (int i = 1; i < results.length; i++) {
+      if (results[i].totalAssets < 0) {
+        depletionIndex = i;
+        break;
+      }
+    }
+    final depletionAge = depletionIndex != null ? results[depletionIndex].age : null;
+
+    // 被动收入超过支出的年份
     int? freedomViaPassive;
     for (final r in results) {
       if (r.passiveIncome >= r.totalExpense) {
@@ -114,17 +159,17 @@ class ResultPage extends ConsumerWidget {
               child: _MiniCard(
                 icon: Icons.flag,
                 color: AppTheme.primaryTeal,
-                title: '${results.last.age}岁时总资产',
+                title: '${lastYear.age}岁时总资产',
                 value: '¥${f.format(lastYear.totalAssets.toInt())}',
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _MiniCard(
-                icon: Icons.person_off,
-                color: AppTheme.warmGold,
-                title: '可自由生活年份',
-                value: freedomYear?.toString() ?? '无法实现',
+                icon: achievedFreedom ? Icons.celebration : Icons.warning_amber,
+                color: achievedFreedom ? AppTheme.successGreen : AppTheme.warmGold,
+                title: achievedFreedom ? '财务自由可达' : '资产耗尽年龄',
+                value: achievedFreedom ? '是 ✓' : '${depletionAge ?? lastYear.age} 岁',
               ),
             ),
           ],
@@ -328,7 +373,7 @@ class _AssetChart extends StatelessWidget {
                   borderData: FlBorderData(show: false),
                   minX: 0,
                   maxX: (results.length - 1).toDouble(),
-                  minY: minAsset * 1.1,
+                  minY: (minAsset * 0.9).clamp(0, double.infinity),
                   maxY: maxAsset * 1.1,
                   lineBarsData: [
                     LineChartBarData(
@@ -378,5 +423,398 @@ class _AssetChart extends StatelessWidget {
     if (count <= 20) return 2;
     if (count <= 40) return 5;
     return 10;
+  }
+}
+
+// ── 被动收入 vs 总支出折线图 ────────────────────────────────────
+class _PassiveVsExpenseChart extends StatelessWidget {
+  final List<YearData> results;
+  const _PassiveVsExpenseChart({required this.results});
+
+  @override
+  Widget build(BuildContext context) {
+    if (results.isEmpty) return const SizedBox();
+
+    final maxExpense = results.fold<double>(0, (m, r) => r.totalExpense > m ? r.totalExpense : m);
+    final maxPassive = results.fold<double>(0, (m, r) => r.passiveIncome > m ? r.passiveIncome : m);
+    final overallMax = (maxExpense > maxPassive ? maxExpense : maxPassive) * 1.1;
+    final range = overallMax.clamp(1, double.infinity);
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 250,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: range / 5,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: AppTheme.dividerColor,
+                      strokeWidth: 0.5,
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      axisNameWidget: const Text('年份',
+                          style: TextStyle(color: AppTheme.textHint, fontSize: 12)),
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        interval: _calcInterval(results.length),
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index < 0 || index >= results.length) return const SizedBox();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text('${results[index].year}',
+                                style: const TextStyle(color: AppTheme.textHint, fontSize: 10)),
+                          );
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      axisNameWidget: const Text('金额 (¥)',
+                          style: TextStyle(color: AppTheme.textHint, fontSize: 12)),
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 60,
+                        getTitlesWidget: (value, meta) {
+                          if (value == 0) return const Text('¥0',
+                              style: TextStyle(color: AppTheme.textHint, fontSize: 10));
+                          final v = value.toInt();
+                          if (v >= 10000) return Text('${(v ~/ 10000)}万',
+                              style: const TextStyle(color: AppTheme.textHint, fontSize: 10));
+                          return Text('$v',
+                              style: const TextStyle(color: AppTheme.textHint, fontSize: 10));
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  minX: 0,
+                  maxX: (results.length - 1).toDouble(),
+                  minY: 0,
+                  maxY: overallMax,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: results.asMap().entries
+                          .map((e) => FlSpot(e.key.toDouble(), e.value.passiveIncome))
+                          .toList(),
+                      isCurved: true,
+                      color: AppTheme.successGreen,
+                      barWidth: 2.5,
+                      dotData: const FlDotData(show: false),
+                      dashArray: [6, 3],
+                    ),
+                    LineChartBarData(
+                      spots: results.asMap().entries
+                          .map((e) => FlSpot(e.key.toDouble(), e.value.totalExpense))
+                          .toList(),
+                      isCurved: true,
+                      color: AppTheme.errorRed,
+                      barWidth: 2.5,
+                      dotData: const FlDotData(show: false),
+                    ),
+                  ],
+                  lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((spot) {
+                          final index = spot.spotIndex;
+                          final data = results[index];
+                          final isPassive = spot.barIndex == 0;
+                          return LineTooltipItem(
+                            '${data.year}年 (${data.age}岁)\n'
+                            '${isPassive ? "被动收入" : "总支出"}: '
+                            '¥${NumberFormat("#,###").format((isPassive ? data.passiveIncome : data.totalExpense).toInt())}',
+                            TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: isPassive ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          );
+                        }).toList();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // 图例
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _legendDot(AppTheme.successGreen, '被动收入 (虚线)'),
+                const SizedBox(width: 20),
+                _legendDot(AppTheme.errorRed, '总支出'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  double _calcInterval(int count) {
+    if (count <= 10) return 1;
+    if (count <= 20) return 2;
+    if (count <= 40) return 5;
+    return 10;
+  }
+
+  Widget _legendDot(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+      ],
+    );
+  }
+}
+
+// ── 资产构成饼图 ────────────────────────────────────────────────
+class _AssetPieChart extends StatelessWidget {
+  final List<AssetModel> assets;
+  const _AssetPieChart({required this.assets});
+
+  static const _pieColors = [
+    AppTheme.primaryTeal,
+    AppTheme.warmGold,
+    AppTheme.successGreen,
+    AppTheme.accentCyan,
+    AppTheme.primaryLight,
+    AppTheme.primaryDark,
+    Colors.orange,
+    Colors.pink,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (assets.isEmpty) {
+      return Card(
+        margin: EdgeInsets.zero,
+        child: SizedBox(
+          height: 200,
+          child: Center(
+            child: Text('暂无资产数据',
+                style: TextStyle(color: AppTheme.textHint, fontSize: 14)),
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 220,
+              child: PieChart(
+                PieChartData(
+                  sections: assets.asMap().entries.map((e) {
+                    final i = e.key;
+                    final asset = e.value;
+                    return PieChartSectionData(
+                      color: _pieColors[i % _pieColors.length],
+                      value: asset.currentValue.clamp(1, double.infinity),
+                      title: '${asset.name}\n¥${NumberFormat("#,###").format(asset.currentValue.toInt())}',
+                      titleStyle: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      radius: 80,
+                    );
+                  }).toList(),
+                  sectionsSpace: 2,
+                  centerSpaceRadius: 40,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // 图例
+            Wrap(
+              spacing: 16,
+              runSpacing: 6,
+              children: assets.asMap().entries.map((e) {
+                final i = e.key;
+                final asset = e.value;
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: _pieColors[i % _pieColors.length],
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${asset.name} (¥${NumberFormat("#,###").format(asset.currentValue.toInt())})',
+                      style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── 制约因素分析柱状图 ──────────────────────────────────────────
+class _SensitivityChart extends StatelessWidget {
+  final List<SensitivityItem> items;
+  const _SensitivityChart({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return Card(
+        margin: EdgeInsets.zero,
+        child: SizedBox(
+          height: 200,
+          child: Center(
+            child: Text('请先添加收支和资产数据',
+                style: TextStyle(color: AppTheme.textHint, fontSize: 14)),
+          ),
+        ),
+      );
+    }
+
+    final maxAbs = items.fold<double>(0, (m, i) => i.impactPercent.abs() > m ? i.impactPercent.abs() : m);
+    final axisMax = (maxAbs * 1.3).clamp(1, double.infinity).toDouble();
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: items.length * 54.0 + 30,
+              child: BarChart(
+                BarChartData(
+                  barTouchData: BarTouchData(
+                    enabled: true,
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final item = items[groupIndex];
+                        final sign = item.impactPercent >= 0 ? '+' : '';
+                        return BarTooltipItem(
+                          '${item.label}: ${sign}${item.impactPercent.toStringAsFixed(1)}%',
+                          const TextStyle(color: Colors.white, fontSize: 12),
+                        );
+                      },
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      axisNameWidget: const Text('影响 (%)',
+                          style: TextStyle(color: AppTheme.textHint, fontSize: 12)),
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 28,
+                        interval: ((axisMax / 3).clamp(1, double.infinity)).toDouble(),
+                        getTitlesWidget: (value, meta) {
+                          if (value == 0) return const Text('0',
+                              style: TextStyle(color: AppTheme.textSecondary, fontSize: 10));
+                          return Text('${value.toInt()}%',
+                              style: const TextStyle(color: AppTheme.textHint, fontSize: 10));
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  minY: -axisMax,
+                  maxY: axisMax,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: true,
+                    drawHorizontalLine: false,
+                    getDrawingVerticalLine: (value) {
+                      if (value == 0) {
+                        return FlLine(color: AppTheme.textSecondary, strokeWidth: 1);
+                      }
+                      return FlLine(color: AppTheme.dividerColor, strokeWidth: 0.5);
+                    },
+                  ),
+                  barGroups: items.asMap().entries.map((e) {
+                    final i = e.key;
+                    final item = e.value;
+                    return BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(
+                          toY: (item.impactPercent.clamp(-axisMax, axisMax)).toDouble(),
+                          width: 28,
+                          color: item.impactPercent >= 0 ? AppTheme.successGreen : AppTheme.errorRed,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(4),
+                            topRight: Radius.circular(4),
+                            bottomLeft: Radius.circular(4),
+                            bottomRight: Radius.circular(4),
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // 标签列
+            ...items.asMap().entries.map((e) {
+              final item = e.value;
+              final sign = item.impactPercent >= 0 ? '+' : '';
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: item.impactPercent >= 0 ? AppTheme.successGreen : AppTheme.errorRed,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${item.label}: ${sign}${item.impactPercent.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: item.impactPercent >= 0 ? AppTheme.successGreen : AppTheme.errorRed,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
   }
 }

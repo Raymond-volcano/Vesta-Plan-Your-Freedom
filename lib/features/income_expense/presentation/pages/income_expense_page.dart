@@ -50,9 +50,17 @@ class _IncomeExpensePageState extends ConsumerState<IncomeExpensePage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _IncomeList(type: IncomeType.active),
-          _IncomeList(type: IncomeType.passive),
-          const _ExpenseList(),
+          _IncomeList(
+            type: IncomeType.active,
+            onEdit: (income) => _showIncomeDialog(existing: income),
+          ),
+          _IncomeList(
+            type: IncomeType.passive,
+            onEdit: (income) => _showIncomeDialog(existing: income),
+          ),
+          _ExpenseList(
+            onEdit: (expense) => _showExpenseDialog(existing: expense),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -391,7 +399,8 @@ class _IncomeExpensePageState extends ConsumerState<IncomeExpensePage>
 // ── Income List ────────────────────────────────────────────────
 class _IncomeList extends ConsumerWidget {
   final IncomeType type;
-  const _IncomeList({required this.type});
+  final void Function(IncomeModel income)? onEdit;
+  const _IncomeList({required this.type, this.onEdit});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -501,6 +510,7 @@ class _IncomeList extends ConsumerWidget {
                       child: Card(
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
+                          onTap: onEdit != null ? () => onEdit!(income) : null,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           title: Text(
                             income.name,
@@ -543,7 +553,8 @@ class _IncomeList extends ConsumerWidget {
 
 // ── Expense List ───────────────────────────────────────────────
 class _ExpenseList extends ConsumerWidget {
-  const _ExpenseList();
+  final void Function(ExpenseModel expense)? onEdit;
+  const _ExpenseList({this.onEdit});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -649,6 +660,7 @@ class _ExpenseList extends ConsumerWidget {
                       child: Card(
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
+                          onTap: onEdit != null ? () => onEdit!(expense) : null,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           title: Text(
                             expense.name,

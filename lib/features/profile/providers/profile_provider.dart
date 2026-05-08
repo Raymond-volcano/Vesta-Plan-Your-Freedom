@@ -59,4 +59,47 @@ class ProfileNotifier extends StateNotifier<UserProfileModel> {
     );
     save(updated);
   }
+
+  void updateUnemploymentStartYear(int? year) {
+    final updated = state.copyWith(
+      unemploymentStartYear: year,
+      clearUnemploymentStart: year == null,
+    );
+    save(updated);
+  }
+
+  void updateUnemploymentStartMonth(int? month) {
+    final updated = state.copyWith(unemploymentStartMonth: month);
+    save(updated);
+  }
+
+  void updateUnemploymentBenefit(double amount) {
+    final updated = state.copyWith(unemploymentBenefit: amount);
+    save(updated);
+  }
+
+  void updateUnemploymentBenefitMonths(int months) {
+    final updated = state.copyWith(unemploymentBenefitMonths: months);
+    save(updated);
+  }
+
+  void updatePensionAmount(double amount) {
+    final updated = state.copyWith(pensionAmount: amount);
+    save(updated);
+  }
+
+  void updateInflationRate(double rate) {
+    final updated = state.copyWith(annualInflationRate: rate);
+    save(updated);
+  }
+
+  void updateUnemploymentExtraExpense(double amount) {
+    final updated = state.copyWith(unemploymentExtraExpense: amount);
+    save(updated);
+  }
+
+  void updateUnemploymentExtraExpenseMonths(int months) {
+    final updated = state.copyWith(unemploymentExtraExpenseMonths: months);
+    save(updated);
+  }
 }
