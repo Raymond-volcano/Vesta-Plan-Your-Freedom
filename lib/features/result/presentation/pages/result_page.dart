@@ -13,6 +13,8 @@ import '../../../../features/pro/providers/pro_status_provider.dart';
 import '../../domain/services/cash_flow_calculator.dart';
 import '../../providers/result_provider.dart';
 import '../../services/export_service.dart';
+import '../widgets/advanced_charts.dart';
+import '../widgets/deep_insight.dart';
 
 class ResultPage extends ConsumerWidget {
   const ResultPage({super.key});
@@ -22,6 +24,8 @@ class ResultPage extends ConsumerWidget {
     final results = ref.watch(simulationResultProvider);
     final simulateUnemployment = ref.watch(simulateUnemploymentProvider);
     final assets = ref.watch(assetListProvider);
+    final incomes = ref.watch(incomeListProvider);
+    final expenses = ref.watch(expenseListProvider);
     final sensitivity = ref.watch(sensitivityProvider);
     final f = NumberFormat('#,###');
 
@@ -126,6 +130,17 @@ class ResultPage extends ConsumerWidget {
                 _SensitivityChart(items: sensitivity),
                 const SizedBox(height: 12),
                 _SensitivityInsight(items: sensitivity),
+                const Gap(24),
+                // ── Pro 高级图表 ────────────────────────────────────
+                _ProAdvancedCharts(results: results, sensitivity: sensitivity),
+                const Gap(24),
+                // ── 深度个性化报告 ──────────────────────────────────
+                _ProDeepInsight(
+                  simulation: results,
+                  sensitivity: sensitivity,
+                  totalMonthlyIncome: incomes.fold<double>(0, (s, i) => s + i.monthlyAmount),
+                  totalMonthlyExpense: expenses.fold<double>(0, (s, e) => s + e.monthlyAmount),
+                ),
                 const Gap(24),
                 // ── 详细数据表格 ────────────────────────────
                 const Text(
@@ -972,6 +987,136 @@ class _SensitivityInsight extends StatelessWidget {
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Pro 高级图表区域 ─────────────────────────────────────────
+class _ProAdvancedCharts extends ConsumerWidget {
+  final List<YearData> results;
+  final List<SensitivityItem> sensitivity;
+
+  const _ProAdvancedCharts({required this.results, required this.sensitivity});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final proStatus = ref.watch(proStatusProvider);
+    if (!ProConfig.advancedChartsEnabled(proStatus.isValid)) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.bar_chart, size: 18, color: AppTheme.warmGold),
+            SizedBox(width: 8),
+            Text('高级图表（Pro）',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _ChartCard(
+          title: '收入构成变化',
+          subtitle: '主动收入 vs 被动收入随时间变化',
+          child: IncomeStackedChart(years: results),
+        ),
+        const Gap(12),
+        _ChartCard(
+          title: '资产变化归因',
+          subtitle: '起始资产 → 净现金流 → 投资回报 → 最终资产',
+          child: AssetWaterfallChart(years: results),
+        ),
+        const Gap(12),
+        _ChartCard(
+          title: '储蓄率 × 回报率敏感度',
+          subtitle: '不同储蓄率和投资回报率下的最终资产',
+          child: SensitivityHeatmap(
+            baseSavingsRate: 0.3,
+            baseReturnRate: 0.05,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── 深度个性化报告（Pro） ─────────────────────────────────
+class _ProDeepInsight extends ConsumerWidget {
+  final List<YearData> simulation;
+  final List<SensitivityItem> sensitivity;
+  final double totalMonthlyIncome;
+  final double totalMonthlyExpense;
+
+  const _ProDeepInsight({
+    required this.simulation,
+    required this.sensitivity,
+    required this.totalMonthlyIncome,
+    required this.totalMonthlyExpense,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final proStatus = ref.watch(proStatusProvider);
+    if (!ProConfig.advancedChartsEnabled(proStatus.isValid)) {
+      return const SizedBox.shrink();
+    }
+    final profile = ref.watch(profileProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.assessment, size: 18, color: AppTheme.warmGold),
+            SizedBox(width: 8),
+            Text('深度分析报告（Pro）',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        DeepInsight(
+          profile: profile,
+          simulation: simulation,
+          sensitivity: sensitivity,
+          totalMonthlyIncome: totalMonthlyIncome,
+          totalMonthlyExpense: totalMonthlyExpense,
+        ),
+      ],
+    );
+  }
+}
+
+// ── 图表卡片包装 ──────────────────────────────────────────────
+class _ChartCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  const _ChartCard({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+            const SizedBox(height: 12),
+            child,
           ],
         ),
       ),

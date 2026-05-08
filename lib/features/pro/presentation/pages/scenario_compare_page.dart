@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../features/result/domain/services/cash_flow_calculator.dart';
+import '../../../../features/result/presentation/widgets/advanced_charts.dart';
 import '../../data/models/scenario_model.dart';
 import '../../providers/scenario_provider.dart';
 
@@ -62,6 +63,14 @@ class ScenarioComparePage extends ConsumerWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 16),
           _CompareTable(results: results),
+          const Gap(24),
+          const Text('综合能力对比',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          const Text('收入水平、最终资产、被动收入、自由年龄、投资回报五个维度',
+              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+          const SizedBox(height: 12),
+          _RadarCompare(results: results),
         ],
       ),
     );
@@ -324,4 +333,78 @@ class _CompareTable extends StatelessWidget {
       case ScenarioLabel.custom: return AppTheme.accentCyan;
     }
   }
+}
+
+// ── 雷达对比图 ──────────────────────────────────────────────
+class _RadarCompare extends StatelessWidget {
+  final List<_ScenarioResult> results;
+  const _RadarCompare({required this.results});
+
+  @override
+  Widget build(BuildContext context) {
+    // 构建雷达图数据
+    final allRadarData = results.map((r) {
+      final last = r.years.lastOrNull;
+      if (last == null) return null;
+
+      double totalReturnRate = 0.05;
+      final assets = r.scenario.assets;
+      if (assets.isNotEmpty) {
+        totalReturnRate =
+            assets.fold<double>(0, (s, a) => s + a.annualReturnRate) / assets.length;
+      }
+
+      return buildRadarData(
+        r.scenario.name,
+        r.years,
+        weightedReturnRate: totalReturnRate,
+      );
+    }).whereNotNull().expand((list) => list).toList();
+
+    if (allRadarData.length < 2) return const SizedBox.shrink();
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 16, 20, 16),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 300,
+              child: ScenarioRadarChart(scenarios: allRadarData),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: results.asMap().entries.map((entry) {
+                final i = entry.key;
+                final r = entry.value;
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: ScenarioRadarChart.chartColors[i % ScenarioRadarChart.chartColors.length],
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(r.scenario.name,
+                        style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                  ],
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+extension _IterableExtensions<T> on Iterable<T?> {
+  Iterable<T> whereNotNull() => where((e) => e != null).cast<T>();
 }
