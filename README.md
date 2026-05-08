@@ -1,6 +1,8 @@
-# financial_freedom_hope
+# Vesta-Plan-Your-Freedom
 
-A new Flutter project.
+Financial Freedom - 财务自由希望 App
+
+A Flutter application for tracking assets, income/expenses, and calculating financial independence timeline.
 
 ## Getting Started
 
