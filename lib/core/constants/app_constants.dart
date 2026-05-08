@@ -6,6 +6,7 @@ class AppConstants {
   static const String expenseBox = 'expenseBox';
   static const String assetBox = 'assetBox';
   static const String profileBox = 'profileBox';
+  static const String scenarioBox = 'scenarioBox';
 
   // Hive TypeAdapter type IDs
   static const int incomeTypeAdapterId = 0;
@@ -14,4 +15,5 @@ class AppConstants {
   static const int assetCategoryAdapterId = 3;
   static const int assetModelAdapterId = 4;
   static const int userProfileModelAdapterId = 5;
+  static const int scenarioModelAdapterId = 6;
 }

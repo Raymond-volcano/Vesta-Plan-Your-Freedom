@@ -80,6 +80,26 @@ class ExpenseModel extends HiveObject {
       endMonth: clearEndMonth ? null : (endMonth ?? this.endMonth),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'monthlyAmount': monthlyAmount,
+        'startYear': startYear,
+        'endYear': endYear,
+        'startMonth': startMonth,
+        'endMonth': endMonth,
+      };
+
+  factory ExpenseModel.fromJson(Map<String, dynamic> json) => ExpenseModel(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        monthlyAmount: (json['monthlyAmount'] as num).toDouble(),
+        startYear: json['startYear'] as int,
+        endYear: json['endYear'] as int?,
+        startMonth: json['startMonth'] as int? ?? 1,
+        endMonth: json['endMonth'] as int?,
+      );
 }
 
 class ExpenseModelAdapter extends TypeAdapter<ExpenseModel> {

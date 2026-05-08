@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/pro/pro_config.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../features/pro/providers/pro_status_provider.dart';
+import '../../../../features/pro/presentation/pages/paywall_page.dart';
 import '../../data/models/income_model.dart';
 import '../../data/models/expense_model.dart';
 import '../../providers/income_expense_provider.dart';
@@ -70,7 +73,30 @@ class _IncomeExpensePageState extends ConsumerState<IncomeExpensePage>
     );
   }
 
+  bool _canAddEntry() {
+    final proStatus = ref.read(proStatusProvider);
+    if (proStatus.isValid) return true;
+
+    final incomes = ref.read(incomeListProvider);
+    final expenses = ref.read(expenseListProvider);
+    return (incomes.length + expenses.length) < ProConfig.freeMaxEntries;
+  }
+
   void _showAddDialog(int tabIndex) {
+    if (!_canAddEntry()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('免费版最多添加 ${ProConfig.freeMaxEntries} 条收支，升级 Pro 可添加无限条目'),
+          action: SnackBarAction(
+            label: '升级',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PaywallPage()),
+            ),
+          ),
+        ),
+      );
+      return;
+    }
     if (tabIndex == 2) {
       _showExpenseDialog();
     } else {

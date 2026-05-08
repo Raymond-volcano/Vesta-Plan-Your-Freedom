@@ -22,3 +22,6 @@ build/
 files/
 files.zip
 flutter_macos_3.29.2-stable.zip
+
+# Claude
+.claude/

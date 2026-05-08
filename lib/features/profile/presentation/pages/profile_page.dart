@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/pro/pro_config.dart';
+import '../../../../features/pro/presentation/pages/paywall_page.dart';
+import '../../../../features/pro/providers/pro_status_provider.dart';
+import '../../../../features/pro/data/city_templates.dart';
 import '../../../income_expense/providers/income_expense_provider.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../providers/profile_provider.dart';
@@ -371,7 +376,85 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
           const Gap(16),
-          // ── 使用说明 ──────────────────────────────────────
+          // ── 城市模板 ───────────────────────────────────────────
+          _CityTemplateCard(),
+          const Gap(16),
+          // ── Pro 升级 ─────────────────────────────────────────
+          _ProUpgradeCard(),
+          const Gap(16),
+          // ── 方案管理 ─────────────────────────────────────────
+          Card(
+            child: InkWell(
+              onTap: () => context.go('/scenarios'),
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryTeal.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.compare_arrows, color: AppTheme.primaryTeal, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('方案管理', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                          SizedBox(height: 4),
+                          Text('保存多方案、切换和对比分析', style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: AppTheme.textHint),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const Gap(8),
+          // ── 帮助 ──────────────────────────────────────────────
+          Card(
+            child: InkWell(
+              onTap: () => context.go('/help'),
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppTheme.accentCyan.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.help_outline, color: AppTheme.accentCyan, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('帮助手册', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                          SizedBox(height: 4),
+                          Text('了解各功能的使用方法', style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: AppTheme.textHint),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const Gap(16),
+          // ── 使用说明 ──────────────────────────────────────────
           Card(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -738,6 +821,342 @@ class _AgeSlider extends StatelessWidget {
           onChanged: onChanged,
         ),
       ],
+    );
+  }
+}
+
+// ── 城市模板卡片 ──────────────────────────────────────────────
+class _CityTemplateCard extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final proStatus = ref.watch(proStatusProvider);
+
+    return Card(
+      child: InkWell(
+        onTap: () => _showCityPicker(context, ref),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppTheme.accentCyan.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.location_city,
+                    color: AppTheme.accentCyan, size: 26),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text('城市模板',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600)),
+                        if (!proStatus.isValid) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: AppTheme.warmGold.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text('Pro',
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    color: AppTheme.warmGold,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const Text('一键填充北上广深典型收支数据',
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.textSecondary)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: AppTheme.textHint),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCityPicker(BuildContext context, WidgetRef ref) {
+    final proStatus = ref.read(proStatusProvider);
+    if (!ProConfig.cityTemplatesEnabled(proStatus.isValid)) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const PaywallPage()),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('选择城市',
+                style: TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            const Text('将自动添加该城市的典型收支数据',
+                style: TextStyle(
+                    color: AppTheme.textSecondary, fontSize: 14)),
+            const SizedBox(height: 20),
+            ...allCityTemplates.map((t) => _CityTile(
+                  template: t,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _applyTemplate(context, ref, t);
+                  },
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _applyTemplate(
+      BuildContext context, WidgetRef ref, CityTemplate template) {
+    final now = DateTime.now();
+    final idPrefix = 'template_${template.cityName}';
+    final startYear = now.year;
+    final currentAge = ref.read(profileProvider).currentAge;
+
+    // 清空现有收支（提示用户）
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('应用模板'),
+        content: Text(
+          '将清空现有收支数据，并填充「${template.cityName}」'
+          '的典型收支（月收入 ¥${template.avgMonthlySalary.toStringAsFixed(0)}，'
+          '月支出约 ${template.typicalExpenses.fold<double>(0, (s, e) => s + e.amount).toStringAsFixed(0)} 元），'
+          '是否继续？',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _doApplyTemplate(context, ref, template, idPrefix, startYear, currentAge);
+            },
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _doApplyTemplate(
+    BuildContext context,
+    WidgetRef ref,
+    CityTemplate template,
+    String idPrefix,
+    int startYear,
+    int currentAge,
+  ) {
+    // 清空现有数据
+    final incomeNotifier = ref.read(incomeListProvider.notifier);
+    final expenseNotifier = ref.read(expenseListProvider.notifier);
+    incomeNotifier.clearAll();
+    expenseNotifier.clearAll();
+
+    // 创建模板数据
+    final incomes = template.createIncomes(idPrefix, startYear);
+    final expenses = template.createExpenses(idPrefix, startYear);
+
+    for (final income in incomes) {
+      incomeNotifier.add(income);
+    }
+    for (final expense in expenses) {
+      expenseNotifier.add(expense);
+    }
+
+    // 设置通胀率
+    ref.read(profileProvider.notifier).updateInflationRate(
+        template.annualInflationRate);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            '已应用「${template.cityName}」模板，共 ${incomes.length} 条收入、${expenses.length} 条支出'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+// ── 城市选择 Tile ─────────────────────────────────────────────
+class _CityTile extends StatelessWidget {
+  final CityTemplate template;
+  final VoidCallback onTap;
+
+  const _CityTile({required this.template, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final totalExpense =
+        template.typicalExpenses.fold<double>(0, (s, e) => s + e.amount);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppTheme.accentCyan.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.location_city,
+                    color: AppTheme.accentCyan, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(template.cityName,
+                        style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text(
+                      '¥${template.avgMonthlySalary.toStringAsFixed(0)}/月  |  支出约 ¥${totalExpense.toStringAsFixed(0)}/月',
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.add_circle_outline,
+                  color: AppTheme.primaryTeal, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Pro 升级卡片 ──────────────────────────────────────────────
+class _ProUpgradeCard extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final proStatus = ref.watch(proStatusProvider);
+    if (proStatus.isValid) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              const Icon(Icons.workspace_premium, color: AppTheme.warmGold, size: 24),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('财务自由希望 Pro',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
+                    SizedBox(height: 4),
+                    Text('已解锁全部功能',
+                        style: TextStyle(
+                            fontSize: 13, color: AppTheme.textSecondary)),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.warmGold.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('已激活',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.warmGold)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return Card(
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const PaywallPage()),
+        ),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.warmGold, Color(0xFFD97706)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.workspace_premium,
+                    color: Colors.white, size: 26),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('升级 Pro 版',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary)),
+                    SizedBox(height: 4),
+                    Text('解锁多情景模拟、方案对比、导出等高级功能',
+                        style: TextStyle(
+                            fontSize: 13, color: AppTheme.textSecondary)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: AppTheme.textHint),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

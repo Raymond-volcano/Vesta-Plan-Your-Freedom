@@ -113,6 +113,42 @@ class UserProfileModel extends HiveObject {
           unemploymentExtraExpenseMonths ?? this.unemploymentExtraExpenseMonths,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'currentAge': currentAge,
+        'retirementAge': retirementAge,
+        'targetMonthlyPassiveIncome': targetMonthlyPassiveIncome,
+        'genderIndex': genderIndex,
+        'unemploymentBenefit': unemploymentBenefit,
+        'unemploymentBenefitMonths': unemploymentBenefitMonths,
+        'pensionAmount': pensionAmount,
+        'unemploymentStartYear': unemploymentStartYear,
+        'unemploymentStartMonth': unemploymentStartMonth,
+        'annualInflationRate': annualInflationRate,
+        'unemploymentExtraExpense': unemploymentExtraExpense,
+        'unemploymentExtraExpenseMonths': unemploymentExtraExpenseMonths,
+      };
+
+  factory UserProfileModel.fromJson(Map<String, dynamic> json) =>
+      UserProfileModel(
+        currentAge: json['currentAge'] as int,
+        retirementAge: json['retirementAge'] as int,
+        targetMonthlyPassiveIncome:
+            (json['targetMonthlyPassiveIncome'] as num?)?.toDouble() ?? 0,
+        genderIndex: json['genderIndex'] as int? ?? 0,
+        unemploymentBenefit:
+            (json['unemploymentBenefit'] as num?)?.toDouble() ?? 0,
+        unemploymentBenefitMonths: json['unemploymentBenefitMonths'] as int? ?? 0,
+        pensionAmount: (json['pensionAmount'] as num?)?.toDouble() ?? 0,
+        unemploymentStartYear: json['unemploymentStartYear'] as int?,
+        unemploymentStartMonth: json['unemploymentStartMonth'] as int?,
+        annualInflationRate:
+            (json['annualInflationRate'] as num?)?.toDouble() ?? 0.03,
+        unemploymentExtraExpense:
+            (json['unemploymentExtraExpense'] as num?)?.toDouble() ?? 0,
+        unemploymentExtraExpenseMonths:
+            json['unemploymentExtraExpenseMonths'] as int? ?? 0,
+      );
 }
 
 class UserProfileModelAdapter extends TypeAdapter<UserProfileModel> {

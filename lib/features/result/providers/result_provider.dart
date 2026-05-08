@@ -80,7 +80,7 @@ final sensitivityProvider = Provider<List<SensitivityItem>>((ref) {
     overrideExpenses: expenses.map((e) => e.copyWith(monthlyAmount: e.monthlyAmount * 1.1)).toList(),
   );
   impact.add(SensitivityItem(
-    label: '月支出',
+    label: '每月开销',
     impactPercent: (expUp - baselineFinal) / baselineFinal.abs() * 100,
   ));
 
@@ -91,7 +91,7 @@ final sensitivityProvider = Provider<List<SensitivityItem>>((ref) {
           i.type == IncomeType.active ? i.copyWith(monthlyAmount: i.monthlyAmount * 1.1) : i).toList(),
     );
     impact.add(SensitivityItem(
-      label: '主动收入',
+      label: '工资收入',
       impactPercent: (incUp - baselineFinal) / baselineFinal.abs() * 100,
     ));
   }
@@ -103,7 +103,7 @@ final sensitivityProvider = Provider<List<SensitivityItem>>((ref) {
           i.type == IncomeType.passive ? i.copyWith(monthlyAmount: i.monthlyAmount * 1.1) : i).toList(),
     );
     impact.add(SensitivityItem(
-      label: '被动收入',
+      label: '理财收入',
       impactPercent: (passUp - baselineFinal) / baselineFinal.abs() * 100,
     ));
   }
@@ -114,7 +114,7 @@ final sensitivityProvider = Provider<List<SensitivityItem>>((ref) {
       overrideAssets: assets.map((a) => a.copyWith(currentValue: a.currentValue * 1.1)).toList(),
     );
     impact.add(SensitivityItem(
-      label: '总资产',
+      label: '启动本金',
       impactPercent: (astUp - baselineFinal) / baselineFinal.abs() * 100,
     ));
   }
@@ -125,7 +125,7 @@ final sensitivityProvider = Provider<List<SensitivityItem>>((ref) {
       overrideAssets: assets.map((a) => a.copyWith(annualReturnRate: a.annualReturnRate + 0.01)).toList(),
     );
     impact.add(SensitivityItem(
-      label: '收益率',
+      label: '投资回报',
       impactPercent: (rateUp - baselineFinal) / baselineFinal.abs() * 100,
     ));
   }
@@ -135,7 +135,7 @@ final sensitivityProvider = Provider<List<SensitivityItem>>((ref) {
     overrideProfile: profile.copyWith(annualInflationRate: profile.annualInflationRate + 0.01),
   );
   impact.add(SensitivityItem(
-    label: '通胀率',
+    label: '物价上涨',
     impactPercent: (inflUp - baselineFinal) / baselineFinal.abs() * 100,
   ));
 

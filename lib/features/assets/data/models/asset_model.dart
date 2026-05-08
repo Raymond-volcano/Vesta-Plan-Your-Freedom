@@ -38,6 +38,20 @@ class AssetModel extends HiveObject {
       annualReturnRate: annualReturnRate ?? this.annualReturnRate,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'currentValue': currentValue,
+        'annualReturnRate': annualReturnRate,
+      };
+
+  factory AssetModel.fromJson(Map<String, dynamic> json) => AssetModel(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        currentValue: (json['currentValue'] as num).toDouble(),
+        annualReturnRate: (json['annualReturnRate'] as num).toDouble(),
+      );
 }
 
 class AssetModelAdapter extends TypeAdapter<AssetModel> {

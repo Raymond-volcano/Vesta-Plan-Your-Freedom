@@ -93,6 +93,28 @@ class IncomeModel extends HiveObject {
       endMonth: clearEndMonth ? null : (endMonth ?? this.endMonth),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'monthlyAmount': monthlyAmount,
+        'startYear': startYear,
+        'endYear': endYear,
+        'type': type.index,
+        'startMonth': startMonth,
+        'endMonth': endMonth,
+      };
+
+  factory IncomeModel.fromJson(Map<String, dynamic> json) => IncomeModel(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        monthlyAmount: (json['monthlyAmount'] as num).toDouble(),
+        startYear: json['startYear'] as int,
+        endYear: json['endYear'] as int?,
+        type: IncomeType.values[json['type'] as int],
+        startMonth: json['startMonth'] as int? ?? 1,
+        endMonth: json['endMonth'] as int?,
+      );
 }
 
 class IncomeModelAdapter extends TypeAdapter<IncomeModel> {

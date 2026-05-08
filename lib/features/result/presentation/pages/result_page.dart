@@ -4,10 +4,15 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/pro/pro_config.dart';
 import '../../../../features/assets/providers/asset_provider.dart';
 import '../../../../features/assets/data/models/asset_model.dart';
+import '../../../../features/income_expense/providers/income_expense_provider.dart';
+import '../../../../features/profile/providers/profile_provider.dart';
+import '../../../../features/pro/providers/pro_status_provider.dart';
 import '../../domain/services/cash_flow_calculator.dart';
 import '../../providers/result_provider.dart';
+import '../../services/export_service.dart';
 
 class ResultPage extends ConsumerWidget {
   const ResultPage({super.key});
@@ -24,6 +29,14 @@ class ResultPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('模拟结果'),
         actions: [
+          // 导出报告
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: '导出 PDF 报告',
+            onPressed: results.isEmpty
+                ? null
+                : () => _exportReport(context, ref),
+          ),
           // 模拟失业开关
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -111,6 +124,8 @@ class ResultPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 _SensitivityChart(items: sensitivity),
+                const SizedBox(height: 12),
+                _SensitivityInsight(items: sensitivity),
                 const Gap(24),
                 // ── 详细数据表格 ────────────────────────────
                 const Text(
@@ -125,6 +140,58 @@ class ResultPage extends ConsumerWidget {
               ],
             ),
     );
+  }
+
+  Future<void> _exportReport(BuildContext context, WidgetRef ref) async {
+    final proStatus = ref.read(proStatusProvider);
+    if (!ProConfig.exportEnabled(proStatus.isValid)) {
+      // 非 Pro 引导升级
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('导出报告为 Pro 专属功能，请升级后使用')),
+      );
+      return;
+    }
+
+    final incomes = ref.read(incomeListProvider);
+    final expenses = ref.read(expenseListProvider);
+    final assets = ref.read(assetListProvider);
+    final profile = ref.read(profileProvider);
+    final results = ref.read(simulationResultProvider);
+    final sensitivity = ref.read(sensitivityProvider);
+    final simulateUnemployment = ref.read(simulateUnemploymentProvider);
+
+    if (results.isEmpty) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await ExportService.exportReport(
+        profile: profile,
+        incomes: incomes,
+        expenses: expenses,
+        assets: assets,
+        simulation: results,
+        sensitivity: sensitivity,
+        simulateUnemployment: simulateUnemployment,
+      );
+      if (context.mounted) {
+        Navigator.of(context).pop(); // 关掉 loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('报告已生成并分享')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('导出失败：$e')),
+        );
+      }
+    }
   }
 
   Widget _buildSummaryCards(List<YearData> results, NumberFormat f) {
@@ -812,6 +879,99 @@ class _SensitivityChart extends StatelessWidget {
                 ),
               );
             }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── 分析说明卡片 ──────────────────────────────────────────────
+class _SensitivityInsight extends StatelessWidget {
+  final List<SensitivityItem> items;
+  const _SensitivityInsight({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    // 最佳机会（正向影响最大）
+    SensitivityItem? best;
+    for (final i in items) {
+      if (i.impactPercent > 0 && (best == null || i.impactPercent > best.impactPercent)) {
+        best = i;
+      }
+    }
+    // 最大风险（负向影响最大）
+    SensitivityItem? worst;
+    for (final i in items) {
+      if (i.impactPercent < 0 && (worst == null || i.impactPercent < worst.impactPercent)) {
+        worst = i;
+      }
+    }
+
+    final sentences = <String>[];
+
+    if (best != null) {
+      final abs = best.impactPercent.abs();
+      if (abs >= 50) {
+        sentences.add('「${best.label}」对你的财富影响巨大，提升${best.label}是加速实现目标最有效的方式。');
+      } else if (abs >= 20) {
+        sentences.add('「${best.label}」对你的财务状况有明显帮助，重点提升这个方面能让你更快达成目标。');
+      } else {
+        sentences.add('「${best.label}」对你的财富有积极影响，可以持续关注。');
+      }
+    }
+
+    if (worst != null) {
+      final abs = worst.impactPercent.abs();
+      if (abs >= 50) {
+        sentences.add('「${worst.label}」是最大的财务风险，它会严重侵蚀你的资产。建议严控这方面的支出，留足应急资金。');
+      } else if (abs >= 20) {
+        sentences.add('「${worst.label}」是需要警惕的风险因素，建议提前做好应对准备。');
+      } else {
+        sentences.add('「${worst.label}」的影响相对可控，但也要留意。');
+      }
+    }
+
+    if (sentences.isEmpty) {
+      sentences.add('各因素对你的财务目标影响相对均衡。继续保持当前计划，同时关注收支变化即可。');
+    }
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.lightbulb_outline, size: 18, color: AppTheme.warmGold),
+                const SizedBox(width: 6),
+                const Text(
+                  '分析建议',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            for (final sentence in sentences)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  sentence,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

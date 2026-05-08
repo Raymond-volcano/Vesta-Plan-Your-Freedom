@@ -39,6 +39,11 @@ class IncomeListNotifier extends StateNotifier<List<IncomeModel>> {
       state = _box.values.toList();
     }
   }
+
+  void clearAll() {
+    _box.clear();
+    state = [];
+  }
 }
 
 // ── Expense Box ────────────────────────────────────────────────
@@ -75,5 +80,10 @@ class ExpenseListNotifier extends StateNotifier<List<ExpenseModel>> {
       _box.deleteAt(index);
       state = _box.values.toList();
     }
+  }
+
+  void clearAll() {
+    _box.clear();
+    state = [];
   }
 }

@@ -5,6 +5,9 @@ import '../../features/income_expense/presentation/pages/income_expense_page.dar
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/result/presentation/pages/result_page.dart';
 import '../../features/assets/presentation/pages/assets_page.dart';
+import '../../features/pro/presentation/pages/scenario_list_page.dart';
+import '../../features/pro/presentation/pages/scenario_compare_page.dart';
+import '../../features/pro/presentation/pages/help_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -45,6 +48,24 @@ final appRouter = GoRouter(
           path: '/profile',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: ProfilePage(),
+          ),
+        ),
+        GoRoute(
+          path: '/scenarios',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: ScenarioListPage(),
+          ),
+        ),
+        GoRoute(
+          path: '/scenarios/compare',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: ScenarioComparePage(),
+          ),
+        ),
+        GoRoute(
+          path: '/help',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: HelpPage(),
           ),
         ),
       ],
