@@ -91,9 +91,11 @@ class ResultPage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                SizedBox(
-                  height: 300,
-                  child: _AssetChart(results: results),
+                RepaintBoundary(
+                  child: SizedBox(
+                    height: 300,
+                    child: _AssetChart(results: results),
+                  ),
                 ),
                 const Gap(24),
                 // ── 被动收入 vs 总支出 ──────────────────────
@@ -105,7 +107,9 @@ class ResultPage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _PassiveVsExpenseChart(results: results),
+                RepaintBoundary(
+                  child: _PassiveVsExpenseChart(results: results),
+                ),
                 const Gap(24),
                 // ── 资产构成 ──────────────────────────────────
                 const Text(
@@ -116,7 +120,9 @@ class ResultPage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _AssetPieChart(assets: assets),
+                RepaintBoundary(
+                  child: _AssetPieChart(assets: assets),
+                ),
                 const Gap(24),
                 // ── 制约因素分析 ──────────────────────────────
                 const Text(
@@ -127,7 +133,9 @@ class ResultPage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _SensitivityChart(items: sensitivity),
+                RepaintBoundary(
+                  child: _SensitivityChart(items: sensitivity),
+                ),
                 const SizedBox(height: 12),
                 _SensitivityInsight(items: sensitivity),
                 const Gap(24),
@@ -143,15 +151,22 @@ class ResultPage extends ConsumerWidget {
                 ),
                 const Gap(24),
                 // ── 详细数据表格 ────────────────────────────
-                const Text(
-                  '逐年数据',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                RepaintBoundary(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '逐年数据',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...results.map((yearData) => _buildYearRow(yearData, f)),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                ...results.map((yearData) => _buildYearRow(yearData, f)),
               ],
             ),
     );

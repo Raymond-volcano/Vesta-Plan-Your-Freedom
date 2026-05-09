@@ -28,6 +28,11 @@ final simulationResultProvider = Provider<List<YearData>>((ref) {
   );
 });
 
+/// 缓存基线模拟结果，供 sensitivity 复用
+final _baselineResultProvider = Provider<List<YearData>>((ref) {
+  return ref.watch(simulationResultProvider);
+});
+
 // ── Sensitivity Analysis ──────────────────────────────────────
 
 class SensitivityItem {
