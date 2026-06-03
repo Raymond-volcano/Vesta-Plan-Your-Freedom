@@ -80,7 +80,7 @@ Year-by-year projection from current age to age 80. Each year computes:
 1. **Active income** (suppressed during unemployment unless retired)
 2. **Passive income** (always active)
 3. **Unemployment benefit** (capped by benefit months)
-4. **Pension** (grows 5%/year after retirement)
+4. **Pension** (fixed amount, no growth)
 5. **Expenses** (inflation-compounded annually)
 6. **Asset returns** (blended weighted-average return rate)
 7. **Net cash flow** = total income - total expense → added to running assets

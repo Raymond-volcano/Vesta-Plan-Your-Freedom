@@ -254,7 +254,7 @@ class _IncomeExpensePageState extends ConsumerState<IncomeExpensePage>
                   startYear: startYear,
                   startMonth: startMonth,
                   endYear: endYear,
-                  endMonth: isPermanent ? null : endMonth,
+                  endMonth: isPermanent ? null : (endMonth ?? 12),
                   type: selectedType,
                 );
 
@@ -403,7 +403,7 @@ class _IncomeExpensePageState extends ConsumerState<IncomeExpensePage>
                   startYear: startYear,
                   startMonth: startMonth,
                   endYear: endYear,
-                  endMonth: isPermanent ? null : endMonth,
+                  endMonth: isPermanent ? null : (endMonth ?? 12),
                 );
 
                 if (isEdit) {

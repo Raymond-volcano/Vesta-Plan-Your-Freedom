@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import '../../../../features/income_expense/data/models/income_model.dart';
 import '../../../../features/income_expense/data/models/expense_model.dart';
 import '../../../../features/assets/data/models/asset_model.dart';
@@ -24,12 +23,7 @@ class YearData {
   });
 }
 
-/// 1.05^n 快速查找表（避免重复计算 pow）
-final _pow105Cache = <int, double>{};
-double _pow105(int n) {
-  if (n <= 0) return 1.0;
-  return _pow105Cache.putIfAbsent(n, () => math.pow(1.05, n).toDouble());
-}
+// 注意：养老金增长已移除（5%年增长不现实），改为固定金额
 
 /// 计算某笔收入在指定年份的实际月数
 int _activeIncomeMonths(IncomeModel income, int year) {
@@ -111,7 +105,7 @@ class CashFlowCalculator {
       final age = startAge + i;
       final isRetired = age >= retirementAge;
       final isUnemployed = simulateUnemployment && year >= unemployStartYear;
-      final activeEnabled = !isUnemployed || isRetired;
+      final activeEnabled = !isRetired && !isUnemployed;
 
       // 收入
       double activeIncome = 0;
@@ -138,10 +132,10 @@ class CashFlowCalculator {
         }
       }
 
-      // 养老金（退休后每年 5% 复利）
+      // 养老金（固定金额，不增长）
       double pensionIncome = 0;
       if (isRetired && hasPension) {
-        pensionIncome = pensionAmount * 12 * _pow105(age - retirementAge);
+        pensionIncome = pensionAmount * 12;
       }
 
       // 支出
