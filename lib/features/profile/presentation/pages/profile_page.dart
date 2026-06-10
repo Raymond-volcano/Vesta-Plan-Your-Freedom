@@ -4,9 +4,6 @@ import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/pro/pro_config.dart';
-import '../../../../features/pro/presentation/pages/paywall_page.dart';
-import '../../../../features/pro/providers/pro_status_provider.dart';
 import '../../../../features/pro/data/city_templates.dart';
 import '../../../income_expense/providers/income_expense_provider.dart';
 import '../../data/models/user_profile_model.dart';
@@ -829,7 +826,6 @@ class _AgeSlider extends StatelessWidget {
 class _CityTemplateCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final proStatus = ref.watch(proStatusProvider);
 
     return Card(
       child: InkWell(
@@ -895,13 +891,6 @@ class _CityTemplateCard extends ConsumerWidget {
   }
 
   void _showCityPicker(BuildContext context, WidgetRef ref) {
-    final proStatus = ref.read(proStatusProvider);
-    if (!ProConfig.cityTemplatesEnabled(proStatus.isValid)) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const PaywallPage()),
-      );
-      return;
-    }
 
     showModalBottomSheet(
       context: context,
@@ -1069,92 +1058,44 @@ class _CityTile extends StatelessWidget {
   }
 }
 
-// ── Pro 升级卡片 ──────────────────────────────────────────────
-class _ProUpgradeCard extends ConsumerWidget {
+// ── 免费状态卡片 ──────────────────────────────────────────────
+class _ProUpgradeCard extends StatelessWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final proStatus = ref.watch(proStatusProvider);
-    if (proStatus.isValid) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              const Icon(Icons.workspace_premium, color: AppTheme.warmGold, size: 24),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('财务自由希望 Pro',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600)),
-                    SizedBox(height: 4),
-                    Text('已解锁全部功能',
-                        style: TextStyle(
-                            fontSize: 13, color: AppTheme.textSecondary)),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.warmGold.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text('已激活',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.warmGold)),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+  Widget build(BuildContext context) {
     return Card(
-      child: InkWell(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const PaywallPage()),
-        ),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.warmGold, Color(0xFFD97706)],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.workspace_premium,
-                    color: Colors.white, size: 26),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            const Icon(Icons.celebration, color: AppTheme.warmGold, size: 24),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('财务自由希望',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w600)),
+                  SizedBox(height: 4),
+                  Text('全部功能已免费开放 🎉',
+                      style: TextStyle(
+                          fontSize: 13, color: AppTheme.textSecondary)),
+                ],
               ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('升级 Pro 版',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary)),
-                    SizedBox(height: 4),
-                    Text('解锁多情景模拟、方案对比、导出等高级功能',
-                        style: TextStyle(
-                            fontSize: 13, color: AppTheme.textSecondary)),
-                  ],
-                ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.successGreen.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const Icon(Icons.chevron_right, color: AppTheme.textHint),
-            ],
-          ),
+              child: const Text('免费',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.successGreen)),
+            ),
+          ],
         ),
       ),
     );

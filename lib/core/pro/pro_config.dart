@@ -1,31 +1,28 @@
-/// Pro 功能的 Feature Flag 和免费版限制配置
+/// 免费版功能配置 — 全部公开，仅靠 AdSense 广告变现
 class ProConfig {
   ProConfig._();
 
-  /// 免费版最大收支条目数
-  static const int freeMaxEntries = 3;
+  /// 最大收支条目数（null = 无限）
+  static const int? freeMaxEntries = null;
 
-  /// 免费版最大方案数
-  static const int freeMaxScenarios = 2;
-
-  /// Pro 版最大方案数（null = 无限）
-  static const int? proMaxScenarios = null;
+  /// 最大方案数（null = 无限）
+  static const int? freeMaxScenarios = null;
 
   /// 是否启用语音输入
-  static bool voiceInputEnabled(bool isPro) => isPro;
+  static bool voiceInputEnabled() => true;
 
   /// 是否启用多情景模拟
-  static bool multiScenarioEnabled(bool isPro) => isPro;
+  static bool multiScenarioEnabled() => true;
 
   /// 是否启用方案对比
-  static bool scenarioCompareEnabled(bool isPro) => isPro;
+  static bool scenarioCompareEnabled() => true;
 
   /// 是否启用城市模板
-  static bool cityTemplatesEnabled(bool isPro) => isPro;
+  static bool cityTemplatesEnabled() => true;
 
   /// 是否启用导出（PDF/Excel）
-  static bool exportEnabled(bool isPro) => isPro;
+  static bool exportEnabled() => true;
 
   /// 是否启用高级图表
-  static bool advancedChartsEnabled(bool isPro) => isPro;
+  static bool advancedChartsEnabled() => true;
 }

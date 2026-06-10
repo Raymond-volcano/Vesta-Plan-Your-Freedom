@@ -4,12 +4,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/pro/pro_config.dart';
 import '../../../../features/assets/providers/asset_provider.dart';
 import '../../../../features/assets/data/models/asset_model.dart';
 import '../../../../features/income_expense/providers/income_expense_provider.dart';
 import '../../../../features/profile/providers/profile_provider.dart';
-import '../../../../features/pro/providers/pro_status_provider.dart';
 import '../../domain/services/cash_flow_calculator.dart';
 import '../../providers/result_provider.dart';
 import '../../services/export_service.dart';
@@ -173,15 +171,6 @@ class ResultPage extends ConsumerWidget {
   }
 
   Future<void> _exportReport(BuildContext context, WidgetRef ref) async {
-    final proStatus = ref.read(proStatusProvider);
-    if (!ProConfig.exportEnabled(proStatus.isValid)) {
-      // 非 Pro 引导升级
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('导出报告为 Pro 专属功能，请升级后使用')),
-      );
-      return;
-    }
-
     final incomes = ref.read(incomeListProvider);
     final expenses = ref.read(expenseListProvider);
     final assets = ref.read(assetListProvider);
@@ -1018,11 +1007,6 @@ class _ProAdvancedCharts extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final proStatus = ref.watch(proStatusProvider);
-    if (!ProConfig.advancedChartsEnabled(proStatus.isValid)) {
-      return const SizedBox.shrink();
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1030,7 +1014,7 @@ class _ProAdvancedCharts extends ConsumerWidget {
           children: [
             Icon(Icons.bar_chart, size: 18, color: AppTheme.warmGold),
             SizedBox(width: 8),
-            Text('高级图表（Pro）',
+            Text('高级图表',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           ],
         ),
@@ -1076,10 +1060,6 @@ class _ProDeepInsight extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final proStatus = ref.watch(proStatusProvider);
-    if (!ProConfig.advancedChartsEnabled(proStatus.isValid)) {
-      return const SizedBox.shrink();
-    }
     final profile = ref.watch(profileProvider);
 
     return Column(
@@ -1089,7 +1069,7 @@ class _ProDeepInsight extends ConsumerWidget {
           children: [
             Icon(Icons.assessment, size: 18, color: AppTheme.warmGold),
             SizedBox(width: 8),
-            Text('深度分析报告（Pro）',
+            Text('深度分析报告',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           ],
         ),

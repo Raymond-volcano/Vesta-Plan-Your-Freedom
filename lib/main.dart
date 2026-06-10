@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -14,10 +13,8 @@ import 'app.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ── 初始化 Hive（Web 不需要 init，移动端用文件存储） ──────────
-  if (!kIsWeb) {
-    await Hive.initFlutter();
-  }
+  // ── 初始化 Hive（Web 使用 IndexedDB，移动端/桌面用文件存储） ──
+  await Hive.initFlutter();
 
   // 注册 TypeAdapter（手写）
   Hive.registerAdapter(IncomeModelAdapter());

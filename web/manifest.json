@@ -1,11 +1,11 @@
 {
-    "name": "financial_freedom_hope",
-    "short_name": "financial_freedom_hope",
+    "name": "财务自由希望 — 免费财务自由计算器",
+    "short_name": "财务自由希望",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0D9488",
+    "theme_color": "#0D9488",
+    "description": "免费财务自由计算器 — 规划资产、收入、退休计划，计算财务独立时间线。支持多情景模拟、敏感度分析。",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

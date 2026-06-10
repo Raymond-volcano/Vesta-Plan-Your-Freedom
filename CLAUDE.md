@@ -100,17 +100,15 @@ Material 3 with teal seed (`#0D9488`). Gold (`#F59E0B`) for Pro/warning states. 
 
 ### Pro Version Architecture
 
-- **Free limits**: ≤3 income/expense entries, ≤2 scenarios
-- **ScenarioModel**: stores data snapshots as JSON strings in Hive (avoiding nested generics)
-- **Scenarios are standalone snapshots** — editing one doesn't affect others
-- **Access control**: `ProGate` widget wraps Pro features; `proStatusProvider` (SharedPreferences) gates access
-- **Multi-scenario**: auto-generates optimistic/conservative/extreme from baseline by adjusting income/expense/return/inflation rates
+- **Removed**: Pro paywall removed — all features free, monetized via Google AdSense ads
+- **AdSense ads**: Placed in `web/index.html` (HTML layer, not inside Flutter canvas)
+- **Configuration**: Replace `pub-XXXXXXXXXXXXXXXX` in `web/index.html` with your AdSense publisher ID
+- **Web persistence**: Hive uses IndexedDB on web (no data loss on refresh)
 
 ### Important Development Notes
 
 - Hive adapters are **hand-written** using `reader.readMap()`/`writer.writeMap()` (not code-generated)
 - `UserProfileModel` stores as singleton: `_box.clear()` then `_box.add()` on each save
-- `kIsWeb` check in `main.dart` skips `Hive.initFlutter()` for web (Hive uses IndexedDB)
-- Web data is in-memory only — refreshes lose data (debugging only)
+- `kIsWeb` is no longer needed — `Hive.initFlutter()` works on all platforms (uses IndexedDB on web)
 - `shared_preferences` is used for `proStatusProvider` only
 - No test files exist yet

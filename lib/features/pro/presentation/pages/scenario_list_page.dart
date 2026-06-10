@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/pro/pro_config.dart';
 import '../../data/models/scenario_model.dart';
 import '../../providers/scenario_provider.dart';
-import '../../providers/pro_status_provider.dart';
 import 'paywall_page.dart';
 
 /// 方案列表页面
@@ -17,8 +15,6 @@ class ScenarioListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scenarios = ref.watch(scenarioListProvider);
     final activeId = ref.watch(activeScenarioIdProvider);
-    final proStatus = ref.watch(proStatusProvider);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('财务方案'),
@@ -32,7 +28,7 @@ class ScenarioListPage extends ConsumerWidget {
       ),
       body: scenarios.isEmpty
           ? _buildEmpty(context, ref)
-          : _buildList(context, ref, scenarios, activeId, proStatus),
+          : _buildList(context, ref, scenarios, activeId),
     );
   }
 
@@ -68,35 +64,10 @@ class ScenarioListPage extends ConsumerWidget {
     WidgetRef ref,
     List<ScenarioModel> scenarios,
     String? activeId,
-    ProStatus proStatus,
   ) {
-    final canAdd = proStatus.isValid || scenarios.length < ProConfig.freeMaxScenarios;
-
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (!proStatus.isValid && scenarios.length >= ProConfig.freeMaxScenarios)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Card(
-              color: AppTheme.warmGold.withOpacity(0.1),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, color: AppTheme.warmGold, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '免费版最多保存 $ProConfig.freeMaxScenarios 个方案，升级 Pro 可创建无限方案',
-                        style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
         ...scenarios.map((s) => _ScenarioCard(
               scenario: s,
               isActive: s.id == activeId,
@@ -109,9 +80,7 @@ class ScenarioListPage extends ConsumerWidget {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: canAdd
-                ? () => _saveCurrentScenario(context, ref)
-                : () => _showUpgradePrompt(context),
+            onPressed: () => _saveCurrentScenario(context, ref),
             icon: const Icon(Icons.add),
             label: const Text('新建方案'),
             style: OutlinedButton.styleFrom(
@@ -167,11 +136,6 @@ class ScenarioListPage extends ConsumerWidget {
   }
 
   void _generateScenarios(BuildContext context, WidgetRef ref, String baselineId) async {
-    final proStatus = ref.read(proStatusProvider);
-    if (!proStatus.isValid) {
-      _showUpgradePrompt(context);
-      return;
-    }
     final scenarios = ref.read(scenarioListProvider);
     if (scenarios.length >= 5) {
       ScaffoldMessenger.of(context).showSnackBar(

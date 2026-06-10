@@ -1,47 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-/// Pro 状态
+/// Pro 状态 — 全部功能免费公开，无需付费
+///
+/// 本 app 靠 AdSense 广告变现，Pro 概念已移除。
+/// 此 provider 保留仅用于兼容，始终返回已解锁状态。
 class ProStatus {
   final bool isPro;
-  final DateTime? expiryDate; // null = 永久
+  final DateTime? expiryDate;
 
-  const ProStatus({this.isPro = false, this.expiryDate});
+  const ProStatus({this.isPro = true, this.expiryDate});
 
-  /// 当前是否可以使用 Pro 功能（未过期）
-  bool get isValid => isPro && (expiryDate == null || expiryDate!.isAfter(DateTime.now()));
+  /// 始终有效
+  bool get isValid => true;
 }
 
-/// Pro 状态 Provider（SharedPreferences 持久化）
-final proStatusProvider = StateNotifierProvider<ProStatusNotifier, ProStatus>((ref) {
-  return ProStatusNotifier();
+/// Pro 状态 Provider — 始终返回已解锁
+final proStatusProvider = Provider<ProStatus>((ref) {
+  return const ProStatus(isPro: true);
 });
 
+/// 占位，保留引用兼容
 class ProStatusNotifier extends StateNotifier<ProStatus> {
-  ProStatusNotifier() : super(const ProStatus()) {
-    _load();
-  }
-
-  static const _key = 'pro_status';
-
-  Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isPro = prefs.getBool(_key) ?? false;
-    // 暂不处理 expiryDate，默认永久
-    if (isPro) {
-      state = const ProStatus(isPro: true);
-    }
-  }
-
-  /// 解锁 Pro（生产环境接入 IAP）
-  Future<void> unlockPro() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_key, true);
-    state = const ProStatus(isPro: true);
-  }
-
-  /// 恢复购买
-  Future<void> restorePurchase() async {
-    await _load();
-  }
+  ProStatusNotifier() : super(const ProStatus(isPro: true));
 }
