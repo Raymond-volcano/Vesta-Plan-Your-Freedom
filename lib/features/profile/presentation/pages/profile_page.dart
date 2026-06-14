@@ -856,22 +856,7 @@ class _CityTemplateCard extends ConsumerWidget {
                             style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600)),
-                        if (!proStatus.isValid) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: AppTheme.warmGold.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text('Pro',
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    color: AppTheme.warmGold,
-                                    fontWeight: FontWeight.w600)),
-                          ),
-                        ],
+
                       ],
                     ),
                     const SizedBox(height: 4),
