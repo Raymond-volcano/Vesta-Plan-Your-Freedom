@@ -16,7 +16,7 @@ Future<void> main() async {
 
   // ── 初始化 Hive（Web 使用 IndexedDB，移动端/桌面用文件存储） ──
   if (kIsWeb) {
-    await Hive.init();
+    await Hive.init('');
   } else {
     await Hive.initFlutter();
   }
